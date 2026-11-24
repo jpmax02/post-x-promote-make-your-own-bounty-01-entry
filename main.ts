@@ -9,7 +9,9 @@
 //   2. Reads POST-DRAFT.txt and validates it carries everything the post
 //      needs: the required make.fun line, this account's play code, and the
 //      link to make.fun's make-your-own-bounty post that the post quotes.
-//      Anything missing is named and the run exits 1.
+//      Anything missing is named and the run exits 1. It also checks the
+//      post text itself (the part before the posting-note separator) fits
+//      X's 280-character limit.
 //   3. Copies POST.json to <output>/POST.json and writes the validated
 //      draft to <output>/post-draft.txt.
 //
@@ -101,6 +103,21 @@ if (!draft.includes(QUOTED_POST_URL)) {
 }
 if (missing.length > 0) {
   fail(`POST-DRAFT.txt is missing: ${missing.join("; ")}`);
+}
+
+// The post text is the part before the posting-note separator ("---");
+// the note is instructions, not post text. X allows 280 characters a
+// post, so the text itself must fit. (Plain character count is stricter
+// than X's weighted count, where a link counts 23, so this is a safe
+// upper bound.)
+const postText = draft.split("\n---\n")[0].trimEnd();
+if (postText.length === 0) {
+  fail("POST-DRAFT.txt has no post text before the posting-note separator");
+}
+if (postText.length > 280) {
+  fail(
+    `post text is ${postText.length} characters, over X's 280-character limit`,
+  );
 }
 
 // --- 3. Write the outputs. ---
